@@ -9,8 +9,8 @@
 В Podkop откройте нужную секцию с вашим прокси и добавьте в поле
 **Внешние списки доменов / Remote Domains Lists** одну из ссылок:
 
-- [Рекомендуемый расширенный список](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/opencode/domains.txt)
-- [Минимальный список сервисов OpenCode](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/opencode/domains-core.txt)
+- [Рекомендуемый расширенный список](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/opencode/opencode-zen-go-extended-domains.txt)
+- [Минимальный список сервисов OpenCode](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/opencode/opencode-zen-go-domains.txt)
 
 Сохраните и примените настройки. Выбирать оба списка не требуется: расширенный
 уже содержит минимальный. Ссылки на `main` остаются прежними при обновлении файлов.
@@ -18,6 +18,14 @@
 Podkop импортирует текстовые списки как `domain_suffix`: запись `opencode.ai`
 охватывает домен и все его поддомены. Префикс `*.` и протокол в строках не нужны.
 Списки содержат только домены, по одному на строку.
+
+## Имена файлов
+
+- `opencode-zen-go-domains.txt` — основные домены OpenCode Zen / Go.
+- `opencode-zen-go-extended-domains.txt` — основные домены и дополнительные сервисы поиска Exa / Parallel, GitHub и npm.
+- `opencode-ipv4-snapshot-2026-10-19.txt` — снимок IPv4 сервисов OpenCode от 19 октября 2026 года.
+
+После переименования файлов замените прежние ссылки в Podkop на ссылки выше.
 
 ## Состав
 
@@ -45,7 +53,7 @@ DNS-запросы устройства должны обрабатыватьс�
 
 ## IPv4: только снимок DNS
 
-[Снимок IPv4 от 19 октября 2026 года](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/opencode/ipv4-snapshot-2026-10-19.txt)
+[Снимок IPv4 от 19 октября 2026 года](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/opencode/opencode-ipv4-snapshot-2026-10-19.txt)
 содержит A-записи, полученные через Google Public DNS (`https://dns.google/resolve`).
 TTL полученных ответов — 300 секунд. Снимок не обновляется автоматически и
 не является полным постоянным диапазоном адресов OpenCode.
