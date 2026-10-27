@@ -27,6 +27,7 @@ Claude. Ближайший готовый источник — `geosite:anthropi
 Списки подсетей:
 
 - [Подсети Anthropic](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/claude/claude-ipv4-anthropic.txt)
+  — обновляется ежедневно из RIPE Stat по AS399358.
 - [Снимок IPv4 от 27 октября 2026 года](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/claude/claude-ipv4-snapshot-2026-10-27.txt)
   — только для диагностики, постоянным правилом подключать не нужно.
 
@@ -53,8 +54,9 @@ Podkop импортирует текстовые списки как `domain_suf
   и служебные зависимости: плагины Claude Code, npm, GitHub, фичефлаги, телеметрия.
 - `claude-artifacts-cdn-domains.txt` — шрифты и JS-библиотеки, которые грузят
   артефакты. Отдельный файл, потому что это общие CDN, см. ниже.
-- `claude-ipv4-anthropic.txt` — официальный диапазон Anthropic для входящих
-  подключений, `160.79.104.0/23`.
+- `claude-ipv4-anthropic.txt` — все IPv4-префиксы, анонсируемые AS399358
+  (Anthropic, PBC); файл пересобирается ежедневно из RIPE Stat workflow
+  `update-lists`, вручную править не нужно.
 - `claude-ipv4-snapshot-2026-10-27.txt` — снимок A-записей ключевых хостов,
   одиночные `/32`.
 

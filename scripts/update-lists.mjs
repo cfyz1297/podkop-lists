@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+// Обновляет подсети Anthropic из RIPE Stat и проверяет синтаксис всех txt-списков.
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ASN = "AS399358"; // ANTHROPIC, PBC
+const PREFIXES_FILE = "claude/claude-ipv4-anthropic.txt";
+const RIPE_URL = `https://stat.ripe.net/data/announced-prefixes/data.json?resource=${ASN}`;
+
+const DOMAIN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+
+function isIpv4Cidr(value) {
+  const [ip, length, ...rest] = String(value).split("/");
+  if (rest.length || !ip || !length) return false;
+  const octets = ip.split(".");
+  const validOctets = octets.length === 4 && octets.every((part) => /^\d{1,3}$/.test(part) && Number(part) <= 255);
+  return validOctets && /^\d{1,2}$/.test(length) && Number(length) <= 32;
+}
+
+/** Возвращает номера строк, которые Podkop молча выбросит. */
+export function findBadLines(name, text) {
+  const check = /ipv4/i.test(name) ? isIpv4Cidr : (line) => DOMAIN.test(line);
+  return text
+    .split("\n")
+    .map((line, index) => ({ line: line.trim(), number: index + 1 }))
+    .filter(({ line }) => line && !line.startsWith("#"))
+    .filter(({ line }) => !check(line))
+    .map(({ line, number }) => `${number}: ${line}`);
+}
+
+/** IPv4-префиксы из ответа RIPE Stat, отсортированные по адресу и длине маски. */
+export function ipv4Prefixes(payload) {
+  const list = payload?.data?.prefixes;
+  if (!Array.isArray(list)) throw new Error("RIPE Stat: неожиданный формат ответа");
+  const unique = [...new Set(list.map((item) => item?.prefix).filter((prefix) => isIpv4Cidr(prefix) && /^\d+\.\d+\.\d+\.\d+\/\d+$/.test(prefix)))];
+  return unique.sort((a, b) => {
+    const [ipA, lenA] = a.split("/");
+    const [ipB, lenB] = b.split("/");
+    const bytesA = ipA.split(".").map(Number);
+    const bytesB = ipB.split(".").map(Number);
+    for (let i = 0; i < 4; i += 1) if (bytesA[i] !== bytesB[i]) return bytesA[i] - bytesB[i];
+    return Number(lenA) - Number(lenB);
+  });
+}
+
+function listFiles(dir) {
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === ".git" || entry.name === "scripts" ? [] : listFiles(full);
+      return entry.name.endsWith(".txt") ? [full] : [];
+    });
+}
+
+async function main() {
+  const root = process.cwd();
+  let broken = 0;
+  for (const file of listFiles(root)) {
+    const name = path.basename(file);
+    const bad = findBadLines(name, fs.readFileSync(file, "utf8"));
+    if (!bad.length) continue;
+    broken += bad.length;
+    console.error(`${path.relative(root, file)}: ${bad.length} строк(и) не пройдут фильтр Podkop`);
+    for (const line of bad) console.error(`  ${line}`);
+  }
+  if (broken) throw new Error(`битых строк: ${broken}`);
+
+  const response = await fetch(RIPE_URL, { signal: AbortSignal.timeout(30_000) });
+  if (!response.ok) throw new Error(`RIPE Stat ответил ${response.status}`);
+  const prefixes = ipv4Prefixes(await response.json());
+  if (!prefixes.length) throw new Error("RIPE Stat не вернул ни одного IPv4-префикса, файл не трогаю");
+
+  const target = path.join(root, PREFIXES_FILE);
+  const text = `${prefixes.join("\n")}\n`;
+  if (fs.readFileSync(target, "utf8").replace(/\r\n/g, "\n") === text) {
+    console.log(`${PREFIXES_FILE}: без изменений (${prefixes.join(", ")})`);
+    return;
+  }
+  fs.writeFileSync(target, text, "utf8");
+  console.log(`${PREFIXES_FILE}: обновлён → ${prefixes.join(", ")}`);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
+}
