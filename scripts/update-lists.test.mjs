@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { findBadLines, ipv4Prefixes, mergeDomains, parseDomainList } from "./update-lists.mjs";
+import { buildDomainsFile, findBadLines, ipv4Prefixes, parseDomainList } from "./update-lists.mjs";
 
 test("parseDomainList: снимает +., full:, domain: и комментарии", () => {
   assert.deepEqual(
@@ -9,20 +9,26 @@ test("parseDomainList: снимает +., full:, domain: и комментари
   );
 });
 
-test("mergeDomains: новинки дозаписываются, дубли и регистр не ломают файл", () => {
-  const { text, added } = mergeDomains("claude.ai\nclaude.com\n", ["Claude.AI", "claude.dev", "ant.dev", "claude.dev"]);
-  assert.deepEqual(added, ["ant.dev", "claude.dev"]);
-  assert.equal(text, "claude.ai\nclaude.com\nant.dev\nclaude.dev\n");
+test("buildDomainsFile: файл становится ровно списком сообщества", () => {
+  const { text, added, removed } = buildDomainsFile("claude.ai\nclaude.com\ngithub.com\n", ["claude.com", "claude.ai", "claude.dev"]);
+  assert.equal(text, "claude.ai\nclaude.com\nclaude.dev\n");
+  assert.deepEqual(added, ["claude.dev"]);
+  assert.deepEqual(removed, ["github.com"]);
 });
 
-test("mergeDomains: когда всё известно, файл не меняется", () => {
-  const { text, added } = mergeDomains("claude.ai\n", ["claude.ai"]);
-  assert.deepEqual(added, []);
+test("buildDomainsFile: дубли и регистр схлопываются", () => {
+  const { text } = buildDomainsFile("", ["Claude.AI", "claude.ai", "ANT.dev"]);
+  assert.equal(text, "ant.dev\nclaude.ai\n");
+});
+
+test("buildDomainsFile: лишние домены удаляются, а не дозаписываются", () => {
+  const { text, removed } = buildDomainsFile("datadoghq.com\nsentry.io\nclaude.ai\n", ["claude.ai"]);
   assert.equal(text, "claude.ai\n");
+  assert.deepEqual(removed, ["datadoghq.com", "sentry.io"]);
 });
 
-test("mergeDomains: результат проходит фильтр Podkop", () => {
-  const { text } = mergeDomains("claude.ai\n", ["claude.dev"]);
+test("buildDomainsFile: результат проходит фильтр Podkop", () => {
+  const { text } = buildDomainsFile("", ["claude.ai", "claude.dev"]);
   assert.deepEqual(findBadLines("claude-extended-domains.txt", text), []);
 });
 

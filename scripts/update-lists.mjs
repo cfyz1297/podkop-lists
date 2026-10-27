@@ -28,14 +28,17 @@ export function parseDomainList(text) {
     .filter((line) => DOMAIN.test(line));
 }
 
-/** Добавляет отсутствующие домены в конец файла, порядок существующих не меняет. */
-export function mergeDomains(existingText, discovered) {
-  const lines = existingText.split("\n").map((line) => line.trim()).filter(Boolean);
-  const have = new Set(lines.filter((line) => !line.startsWith("#")).map((line) => line.toLowerCase()));
-  const added = [...new Set(discovered)]
-    .filter((domain) => !have.has(domain.toLowerCase()))
-    .sort();
-  return { text: [...lines, ...added].join("\n") + "\n", added };
+/** Приводит файл к объединению источников: по алфавиту, без дублей и ручных строк. */
+export function buildDomainsFile(existingText, discovered) {
+  const before = existingText.split("\n").map((line) => line.trim()).filter(Boolean);
+  const text = [...new Set(discovered.map((domain) => domain.toLowerCase()))].sort().map((d) => `${d}\n`).join("");
+  const after = new Set(text.split("\n").filter(Boolean));
+  const have = new Set(before.map((domain) => domain.toLowerCase()));
+  return {
+    text,
+    added: [...after].filter((domain) => !have.has(domain)),
+    removed: before.filter((domain) => !after.has(domain)),
+  };
 }
 
 function isIpv4Cidr(value) {
@@ -96,29 +99,26 @@ async function main() {
   if (broken) throw new Error(`битых строк: ${broken}`);
 
   const discovered = [];
-  let failedSources = 0;
   for (const url of DOMAIN_SOURCES) {
-    try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const domains = parseDomainList(await response.text());
-      if (!domains.length) throw new Error("пустой ответ");
-      discovered.push(...domains);
-      console.log(`${url}: ${domains.length} доменов`);
-    } catch (error) {
-      failedSources += 1;
-      console.error(`${url}: пропущен — ${error instanceof Error ? error.message : error}`);
-    }
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    if (!response.ok) throw new Error(`${url}: HTTP ${response.status}, файлы не трогаю`);
+    const domains = parseDomainList(await response.text());
+    if (!domains.length) throw new Error(`${url}: пустой ответ, файлы не трогаю`);
+    discovered.push(...domains);
+    console.log(`${url}: ${domains.length} доменов`);
   }
-  if (failedSources === DOMAIN_SOURCES.length) throw new Error("ни один источник доменов не ответил, файлы не трогаю");
 
   const domainsTarget = path.join(root, DOMAINS_FILE);
-  const merged = mergeDomains(fs.readFileSync(domainsTarget, "utf8").replace(/\r\n/g, "\n"), discovered);
-  if (merged.added.length) {
-    fs.writeFileSync(domainsTarget, merged.text, "utf8");
-    console.log(`${DOMAINS_FILE}: добавлено ${merged.added.length} → ${merged.added.join(", ")}`);
+  const built = buildDomainsFile(fs.readFileSync(domainsTarget, "utf8").replace(/\r\n/g, "\n"), discovered);
+  if (built.text !== fs.readFileSync(domainsTarget, "utf8").replace(/\r\n/g, "\n")) {
+    fs.writeFileSync(domainsTarget, built.text, "utf8");
+    console.log(
+      `${DOMAINS_FILE}: приведён к списку сообщества (${built.text.split("\n").filter(Boolean).length} доменов)` +
+        `, добавлено ${built.added.length}${built.added.length ? ` → ${built.added.join(", ")}` : ""}` +
+        `, удалено ${built.removed.length}${built.removed.length ? ` → ${built.removed.join(", ")}` : ""}`,
+    );
   } else {
-    console.log(`${DOMAINS_FILE}: новых доменов нет`);
+    console.log(`${DOMAINS_FILE}: совпадает со списком сообщества`);
   }
 
   const response = await fetch(RIPE_URL, { signal: AbortSignal.timeout(30_000) });

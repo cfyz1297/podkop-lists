@@ -50,10 +50,10 @@ Podkop импортирует текстовые списки как `domain_suf
 
 - `claude-domains.txt` — минимальный набор: домены из официальной документации
   Anthropic, без которых не работают ни веб-версия, ни Desktop, ни Claude Code.
-- `claude-extended-domains.txt` — минимальный набор, домены из `geosite:anthropic`
-  и служебные зависимости: плагины Claude Code, npm, GitHub, фичефлаги, телеметрия.
-  Ежедневно дозаписывается новыми доменами из MetaCubeX и v2fly, ручные строки
-  сохраняются.
+- `claude-extended-domains.txt` — весь набор `geosite:anthropic`, тот же, что у
+  MetaCubeX и v2fly. Файл ежедневно приводится к их объединению: новые домены
+  добавляются, лишние удаляются, порядок алфавитный. Править вручную нет смысла —
+  следующая ночь перезапишет.
 - `claude-artifacts-cdn-domains.txt` — шрифты и JS-библиотеки, которые грузят
   артефакты. Отдельный файл, потому что это общие CDN, см. ниже.
 - `claude-ipv4-anthropic.txt` — все IPv4-префиксы, анонсируемые AS399358
@@ -80,26 +80,21 @@ Desktop; поддомены покрыты суффиксом, поэтому в
 
 ### Расширенный список
 
-Дополнительно к минимальному:
+Остальные 13 доменов сверх минимального набора — категория `anthropic` из
+`domain-list-community` и MetaCubeX: `ant.dev`, `anthropic.team`,
+`antspace.dev`, `chatbotclaude.com`, `clau.de`, `claude.dev`, `claude.new`,
+`claude.site`, `claudeacademy.com`, `claudemcpclient.com`, `claudepages.dev`,
+`claudestudio.com`, `servd-anthropic-website.b-cdn.net`. Это короткие ссылки,
+лендинги и клиентские хосты самой Anthropic.
 
-- `ant.dev`, `anthropic.team`, `antspace.dev`, `chatbotclaude.com`, `clau.de`,
-  `claude.dev`, `claude.new`, `claude.site`, `claudeacademy.com`,
-  `claudemcpclient.com`, `claudepages.dev`, `claudestudio.com`,
-  `servd-anthropic-website.b-cdn.net` — категория `anthropic` из
-  `domain-list-community`: короткие ссылки, лендинги, клиентские хосты.
-- `github.com`, `raw.githubusercontent.com`, `registry.npmjs.org` — установка
-  плагинов Claude Code, changelog для `/release-notes`, `npx` MCP-серверы.
-- `storage.googleapis.com` — метаданные плагинов и старые версии установщика.
-- `featuregates.org`, `featureassets.org`, `prodregistryv2.org`, `statsig.com`,
-  `statsigapi.net` — фичефлаги веб-приложения (Statsig).
-- `sentry.io`, `datadoghq.com` — отчёты об ошибках и телеметрия Claude Code и
-  Desktop; отключаются через `DISABLE_TELEMETRY`, `DISABLE_ERROR_REPORTING` и
-  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
-- `challenges.cloudflare.com`, `static.cloudflareinsights.com` — проверка
-  браузера и аналитика на страницах Anthropic.
-
-Правила GitHub и npm проксируют весь трафик к этим доменам, включая обращения
-других программ. Если это не нужно, удалите эти строки из списка.
+Сторонних сервисов в файле нет. Хосты зависимостей Claude Code — `github.com`,
+`registry.npmjs.org`, `storage.googleapis.com`, фичефлаги Statsig
+(`featuregates.org`, `statsig.com`), телеметрия (`sentry.io`, `datadoghq.com`),
+проверка Cloudflare (`challenges.cloudflare.com`) — из файла удалены: сообщество
+их не проксирует, потому что эти домены общие и увезут в туннель трафик
+посторонних программ. Если плагины Claude Code или `npx` MCP-серверы должны
+работать через прокси, добавьте нужные строки локально, но не в этот
+репозиторий: ночной workflow выровняет файл по сообществу и удалит их снова.
 
 ### CDN артефактов
 
@@ -120,9 +115,10 @@ Anthropic публикует фиксированные диапазоны в д
 
 Диапазон `160.79.104.0/23` совпадает с анонсами AS399358 по данным RIPE RIS,
 поэтому годится как постоянное правило. Снимок `/32` содержит адреса CDN
-(`a-cdn`, `s-cdn`, `assets`, `downloads`): это Google Cloud Load Balancer,
-адреса меняются и обслуживают сторонние сервисы, поэтому снимок — диагностика,
-а не правило.
+(`a-cdn`, `s-cdn`, `assets`, `downloads`): обратные записи вида
+`103.57.36.34.bc.googleusercontent.com` показывают, что это Google Cloud, а не
+Anthropic. Адреса меняются и обслуживают сторонние сервисы, поэтому снимок —
+диагностика, а не правило.
 
 Для маршрутизации по доменам подсети обычно не нужны. Они помогают, когда
 клиент обращается по IP или когда DNS-ответы приходят повреждёнными. Не
@@ -139,9 +135,11 @@ Anthropic публикует фиксированные диапазоны в д
 - `https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-anthropic.srs`
 - `https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/anthropic.srs`
 
-Плюс: обновляется без вашего участия. Минус: внутри только домены из geosite —
-нет хостов плагинов, npm, GitHub, телеметрии и CDN артефактов. Расширенный
-список этого репозитория содержит geosite-набор целиком плюс зависимости.
+Плюс: обновляется без вашего участия. Файл `claude-extended-domains.txt` этого
+репозитория теперь содержит ровно тот же набор, что и `.srs` сообщества, — он
+удобен, когда списки ведутся текстом, а не rule-set. Минус обоих вариантов:
+домены зависимостей Claude Code (GitHub, npm, Statsig, телеметрия) в них не
+входят, их нужно проксировать отдельными правилами.
 
 ## Какие форматы принимает Podkop
 

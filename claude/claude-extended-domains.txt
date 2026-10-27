@@ -2,8 +2,6 @@ ant.dev
 anthropic.com
 anthropic.team
 antspace.dev
-browser-intake-us5-datadoghq.com
-challenges.cloudflare.com
 chatbotclaude.com
 clau.de
 claude.ai
@@ -18,17 +16,4 @@ claudemcpcontent.com
 claudepages.dev
 claudestudio.com
 claudeusercontent.com
-datadoghq.com
-featureassets.org
-featuregates.org
-github.com
-prodregistryv2.org
-raw.githubusercontent.com
-registry.npmjs.org
-sentry.io
 servd-anthropic-website.b-cdn.net
-static.cloudflareinsights.com
-statsig.com
-statsigapi.net
-storage.googleapis.com
-

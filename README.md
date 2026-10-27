@@ -28,16 +28,16 @@
 Workflow [`.github/workflows/update-lists.yml`](.github/workflows/update-lists.yml)
 запускается ежедневно в 04:17 UTC и коммитит только реальные изменения:
 
-- `claude/claude-extended-domains.txt` — дозаписываются новые домены Anthropic,
-  найденные в публичных geosite-списках
+- `claude/claude-extended-domains.txt` — приводится к объединению публичных
+  geosite-списков
   ([MetaCubeX](https://github.com/MetaCubeX/meta-rules-dat),
-  [v2fly](https://github.com/v2fly/domain-list-community));
+  [v2fly](https://github.com/v2fly/domain-list-community)): новые домены
+  добавляются, лишние удаляются, порядок алфавитный;
 - `claude/claude-ipv4-anthropic.txt` — пересобирается из RIPE Stat по AS399358.
 
-Только добавление: существующие строки и ручные записи не удаляются и не
-переупорядочиваются. Минимальный и CDN-список, а также списки `opencode`
-остаются ручными — снимки IPv4 в этих папках предназначены для диагностики и не
-рекомендуются как постоянное правило проксирования.
+Минимальный и CDN-список, а также списки `opencode` остаются ручными. Снимки
+IPv4 в этих папках предназначены для диагностики и не рекомендуются как
+постоянное правило проксирования.
 
 Тот же workflow проверяет синтаксис всех `*.txt`: строка, которую Podkop молча
 выбросит, роняет запуск. Локально: `node scripts/update-lists.mjs` (проверка и
