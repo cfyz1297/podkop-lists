@@ -1,6 +1,31 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { findBadLines, ipv4Prefixes } from "./update-lists.mjs";
+import { findBadLines, ipv4Prefixes, mergeDomains, parseDomainList } from "./update-lists.mjs";
+
+test("parseDomainList: снимает +., full:, domain: и комментарии", () => {
+  assert.deepEqual(
+    parseDomainList("# шапка\n+.claude.ai\nfull:servd-anthropic-website.b-cdn.net\nant.dev # ссылка\n\ndomain:claude.com\nkeyword:claude\nregexp:^claude$\n"),
+    ["claude.ai", "servd-anthropic-website.b-cdn.net", "ant.dev", "claude.com"],
+  );
+});
+
+test("mergeDomains: новинки дозаписываются, дубли и регистр не ломают файл", () => {
+  const { text, added } = mergeDomains("claude.ai\nclaude.com\n", ["Claude.AI", "claude.dev", "ant.dev", "claude.dev"]);
+  assert.deepEqual(added, ["ant.dev", "claude.dev"]);
+  assert.equal(text, "claude.ai\nclaude.com\nant.dev\nclaude.dev\n");
+});
+
+test("mergeDomains: когда всё известно, файл не меняется", () => {
+  const { text, added } = mergeDomains("claude.ai\n", ["claude.ai"]);
+  assert.deepEqual(added, []);
+  assert.equal(text, "claude.ai\n");
+});
+
+test("mergeDomains: результат проходит фильтр Podkop", () => {
+  const { text } = mergeDomains("claude.ai\n", ["claude.dev"]);
+  assert.deepEqual(findBadLines("claude-extended-domains.txt", text), []);
+});
+
 
 test("findBadLines: домены, комментарии и пустые строки проходят", () => {
   assert.deepEqual(findBadLines("claude-domains.txt", "# список\nclaude.ai\n\nsub.domain.com\n"), []);

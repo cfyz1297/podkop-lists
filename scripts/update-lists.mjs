@@ -1,14 +1,42 @@
 #!/usr/bin/env node
-// Обновляет подсети Anthropic из RIPE Stat и проверяет синтаксис всех txt-списков.
+// Дозаписывает новые домены Anthropic/Claude из публичных geosite-списков,
+// пересобирает подсети из RIPE Stat и проверяет синтаксис всех txt-списков.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ASN = "AS399358"; // ANTHROPIC, PBC
 const PREFIXES_FILE = "claude/claude-ipv4-anthropic.txt";
+const DOMAINS_FILE = "claude/claude-extended-domains.txt";
 const RIPE_URL = `https://stat.ripe.net/data/announced-prefixes/data.json?resource=${ASN}`;
 
+// Курируемые списки доменов Anthropic: оба плоским текстом, оба обновляются апстримом.
+const DOMAIN_SOURCES = [
+  "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/anthropic.list",
+  "https://raw.githubusercontent.com/v2fly/domain-list-community/master/data/anthropic",
+];
+
 const DOMAIN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+
+/** Домены из geosite-файла: `+.x`, `full:x`, `domain:x` и комментарии. */
+export function parseDomainList(text) {
+  return text
+    .split("\n")
+    .map((line) => line.split("#")[0].trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/^\+\./, "").replace(/^(?:full|domain):/, ""))
+    .filter((line) => DOMAIN.test(line));
+}
+
+/** Добавляет отсутствующие домены в конец файла, порядок существующих не меняет. */
+export function mergeDomains(existingText, discovered) {
+  const lines = existingText.split("\n").map((line) => line.trim()).filter(Boolean);
+  const have = new Set(lines.filter((line) => !line.startsWith("#")).map((line) => line.toLowerCase()));
+  const added = [...new Set(discovered)]
+    .filter((domain) => !have.has(domain.toLowerCase()))
+    .sort();
+  return { text: [...lines, ...added].join("\n") + "\n", added };
+}
 
 function isIpv4Cidr(value) {
   const [ip, length, ...rest] = String(value).split("/");
@@ -66,6 +94,32 @@ async function main() {
     for (const line of bad) console.error(`  ${line}`);
   }
   if (broken) throw new Error(`битых строк: ${broken}`);
+
+  const discovered = [];
+  let failedSources = 0;
+  for (const url of DOMAIN_SOURCES) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const domains = parseDomainList(await response.text());
+      if (!domains.length) throw new Error("пустой ответ");
+      discovered.push(...domains);
+      console.log(`${url}: ${domains.length} доменов`);
+    } catch (error) {
+      failedSources += 1;
+      console.error(`${url}: пропущен — ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  if (failedSources === DOMAIN_SOURCES.length) throw new Error("ни один источник доменов не ответил, файлы не трогаю");
+
+  const domainsTarget = path.join(root, DOMAINS_FILE);
+  const merged = mergeDomains(fs.readFileSync(domainsTarget, "utf8").replace(/\r\n/g, "\n"), discovered);
+  if (merged.added.length) {
+    fs.writeFileSync(domainsTarget, merged.text, "utf8");
+    console.log(`${DOMAINS_FILE}: добавлено ${merged.added.length} → ${merged.added.join(", ")}`);
+  } else {
+    console.log(`${DOMAINS_FILE}: новых доменов нет`);
+  }
 
   const response = await fetch(RIPE_URL, { signal: AbortSignal.timeout(30_000) });
   if (!response.ok) throw new Error(`RIPE Stat ответил ${response.status}`);

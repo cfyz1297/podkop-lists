@@ -52,6 +52,8 @@ Podkop импортирует текстовые списки как `domain_suf
   Anthropic, без которых не работают ни веб-версия, ни Desktop, ни Claude Code.
 - `claude-extended-domains.txt` — минимальный набор, домены из `geosite:anthropic`
   и служебные зависимости: плагины Claude Code, npm, GitHub, фичефлаги, телеметрия.
+  Ежедневно дозаписывается новыми доменами из MetaCubeX и v2fly, ручные строки
+  сохраняются.
 - `claude-artifacts-cdn-domains.txt` — шрифты и JS-библиотеки, которые грузят
   артефакты. Отдельный файл, потому что это общие CDN, см. ниже.
 - `claude-ipv4-anthropic.txt` — все IPv4-префиксы, анонсируемые AS399358
