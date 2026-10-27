@@ -18,7 +18,6 @@ claudemcpcontent.com
 claudepages.dev
 claudestudio.com
 claudeusercontent.com
-code.claude.com
 datadoghq.com
 featureassets.org
 featuregates.org

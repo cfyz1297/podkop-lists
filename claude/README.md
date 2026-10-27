@@ -62,7 +62,7 @@ Podkop импортирует текстовые списки как `domain_suf
 | `anthropic.com` | `api.anthropic.com`, консоль, документация, статус, поддержка, CDN `assets-proxy`, `a-cdn`, `s-cdn`, прокси MCP-коннекторов |
 | `claude.ai` | Веб-приложение, вход, OAuth, `assets`, `downloads`, `*.livepreview`, `bridge` для Claude in Chrome |
 | `claude.app` | Claude Desktop и его `*.livepreview` |
-| `claude.com` | Сайт, страница входа, `platform.claude.com` (консоль разработчика), `sso.claude.com` |
+| `claude.com` | Сайт, страница входа, `platform.claude.com` (консоль разработчика), `sso.claude.com`, `code.claude.com` (документация Claude Code) |
 | `claudeusercontent.com` | Артефакты и файлы пользователя, содержимое артефактов (`*.frame`) |
 | `claudemcpcontent.com` | Интерактивные виджеты MCP Apps внутри диалога |
 
@@ -78,7 +78,6 @@ Desktop; поддомены покрыты суффиксом, поэтому в
   `claudemcpclient.com`, `claudepages.dev`, `claudestudio.com`,
   `servd-anthropic-website.b-cdn.net` — категория `anthropic` из
   `domain-list-community`: короткие ссылки, лендинги, клиентские хосты.
-- `code.claude.com` — документация Claude Code, которую открывает встроенный агент.
 - `github.com`, `raw.githubusercontent.com`, `registry.npmjs.org` — установка
   плагинов Claude Code, changelog для `/release-notes`, `npx` MCP-серверы.
 - `storage.googleapis.com` — метаданные плагинов и старые версии установщика.
@@ -134,6 +133,30 @@ Anthropic публикует фиксированные диапазоны в д
 Плюс: обновляется без вашего участия. Минус: внутри только домены из geosite —
 нет хостов плагинов, npm, GitHub, телеметрии и CDN артефактов. Расширенный
 список этого репозитория содержит geosite-набор целиком плюс зависимости.
+
+## Сверка с community-набором
+
+Категория `anthropic` из geosite (v2fly, MetaCubeX и её `.srs` в sing-geosite)
+содержит 19 доменов. Сверка выполнена 27 октября 2026 года декомпиляцией `.srs`
+через `sing-box rule-set decompile` (sing-box 1.14.4): обе сборки `.srs` дают
+один и тот же набор, хотя сериализованы в разных версиях формата.
+
+- В расширенном списке присутствуют все 19 доменов community-набора: ничего не
+  потеряно, дополнять его не нужно.
+- В минимальном списке 6 из 19; остальные 13 — лендинги, короткие ссылки и
+  клиентские хосты, они только в расширенном.
+- `code.claude.com` отдельной строкой не нужен: это поддомен `claude.com`.
+- Расширенный список добавляет 14 доменов, которых в geosite нет:
+  `challenges.cloudflare.com`, `static.cloudflareinsights.com`, `datadoghq.com`,
+  `browser-intake-us5-datadoghq.com`, `sentry.io`, `statsig.com`,
+  `statsigapi.net`, `featureassets.org`, `featuregates.org`,
+  `prodregistryv2.org`, `storage.googleapis.com`, `github.com`,
+  `raw.githubusercontent.com`, `registry.npmjs.org`.
+- В подсетях пересечений нет вообще: geosite содержит только домены, IP в нём
+  отсутствуют, `160.79.104.0/23` взят из документации Anthropic и анонсов AS399358.
+
+Оба `.srs` дополнительно проверены `sing-box check` на версии 1.14.4:
+конфигурация с ними валидна, формат загружается.
 
 ## Если что-то не работает
 
