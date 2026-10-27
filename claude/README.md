@@ -157,8 +157,12 @@ Anthropic публикует фиксированные диапазоны в д
   `statsigapi.net`, `featureassets.org`, `featuregates.org`,
   `prodregistryv2.org`, `storage.googleapis.com`, `github.com`,
   `raw.githubusercontent.com`, `registry.npmjs.org`.
-- В подсетях пересечений нет вообще: geosite содержит только домены, IP в нём
-  отсутствуют, `160.79.104.0/23` взят из документации Anthropic и анонсов AS399358.
+- В подсетях пересечений нет и быть не может: geosite содержит только домены
+  (в декомпилированном `.srs` поля `domain` и `domain_suffix`, `ip_cidr` = 0),
+  а IP-наборы `allow-domains` собирает лишь для 11 провайдерских ASN —
+  Cloudflare, CloudFront, Discord, DigitalOcean, Google Meet, Hetzner, Meta, OVH,
+  Roblox, Telegram, Twitter. Anthropic в них отсутствует, поэтому `160.79.104.0/23`
+  взят из документации Anthropic и совпадает с анонсом AS399358.
 
 Оба `.srs` дополнительно проверены `sing-box check` на версии 1.14.4:
 конфигурация с ними валидна, формат загружается.
