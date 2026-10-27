@@ -11,5 +11,21 @@
 
 [Состав, источники и инструкция](opencode/README.md).
 
-Списки поддерживаются вручную. Снимок IPv4 в папке opencode предназначен для
-диагностики и не рекомендуется как постоянное правило проксирования.
+## Claude / Anthropic
+
+Домены — в поле **Внешние списки доменов**, подсети — в поле **Внешние списки
+подсетей** нужной секции Podkop:
+
+- [Расширенный список доменов — рекомендуемый](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/claude/claude-extended-domains.txt)
+- [Минимальный список доменов](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/claude/claude-domains.txt)
+- [CDN артефактов — опционально](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/claude/claude-artifacts-cdn-domains.txt)
+- [Подсети Anthropic](https://raw.githubusercontent.com/cfyz1297/podkop-lists/main/claude/claude-ipv4-anthropic.txt)
+
+[Состав, источники и инструкция](claude/README.md).
+
+## Общее
+
+Списки поддерживаются вручную. Снимки IPv4 в папках `opencode` и `claude`
+предназначены для диагностики и не рекомендуются как постоянное правило
+проксирования; для подсетей используйте файлы с фиксированными диапазонами.
+

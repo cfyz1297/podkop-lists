@@ -1,0 +1,7 @@
+cdn.jsdelivr.net
+cdn.tailwindcss.com
+cdnjs.cloudflare.com
+code.jquery.com
+fonts.googleapis.com
+fonts.gstatic.com
+unpkg.com
